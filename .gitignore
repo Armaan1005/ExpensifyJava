@@ -1,0 +1,22 @@
+# Java
+*.class
+*.log
+
+# Build
+target/
+out/
+
+# Database
+*.db-shm
+*.db-wal
+# expense_tracker.db  <-- Un-comment if you don't want to track the database file
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary/Test files
+Test*.java
+scratch/
