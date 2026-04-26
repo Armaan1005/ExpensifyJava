@@ -1,6 +1,7 @@
 package com.expensetracker.db;
 
 import com.expensetracker.model.Expense;
+import com.expensetracker.model.Split;
 import com.expensetracker.model.User;
 
 import java.nio.charset.StandardCharsets;
@@ -74,8 +75,21 @@ public class DBConnection {
                     + "FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE)");
 
             st.execute("CREATE INDEX IF NOT EXISTS idx_expenses_user ON Expenses(user_id)");
-            st.execute("CREATE INDEX IF NOT EXISTS idx_expenses_date ON Expenses(date)");
             st.execute("CREATE INDEX IF NOT EXISTS idx_expenses_category ON Expenses(user_id, category)");
+
+            st.execute("CREATE TABLE IF NOT EXISTS Splits ("
+                    + "split_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + "payer_id INTEGER NOT NULL, "
+                    + "payee_id INTEGER NOT NULL, "
+                    + "amount REAL NOT NULL, "
+                    + "description TEXT DEFAULT '', "
+                    + "date TEXT NOT NULL, "
+                    + "status TEXT DEFAULT 'PENDING', "
+                    + "FOREIGN KEY (payer_id) REFERENCES Users(user_id) ON DELETE CASCADE, "
+                    + "FOREIGN KEY (payee_id) REFERENCES Users(user_id) ON DELETE CASCADE)");
+
+            st.execute("CREATE INDEX IF NOT EXISTS idx_splits_payee ON Splits(payee_id)");
+            st.execute("CREATE INDEX IF NOT EXISTS idx_splits_payer ON Splits(payer_id)");
         }
     }
 
@@ -369,6 +383,97 @@ public class DBConnection {
             ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getDouble(1);
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    // ── Split Management ─────────────────────────────────────
+
+    /** Retrieves all registered users except the current one. */
+    public List<User> getAllUsers(int excludeUserId) {
+        List<User> list = new ArrayList<>();
+        String sql = "SELECT user_id, username FROM Users WHERE user_id != ? ORDER BY username ASC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, excludeUserId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                User u = new User();
+                u.setUserId(rs.getInt("user_id"));
+                u.setUsername(rs.getString("username"));
+                list.add(u);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    /** Creates a new split record. */
+    public boolean addSplit(Split split) {
+        String sql = "INSERT INTO Splits (payer_id, payee_id, amount, description, date, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, split.getPayerId());
+            ps.setInt(2, split.getPayeeId());
+            ps.setDouble(3, split.getAmount());
+            ps.setString(4, split.getDescription());
+            ps.setString(5, split.getDate());
+            ps.setString(6, split.getStatus());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /** Retrieves splits where the user is either the payer or the payee. */
+    public List<Split> getSplitsForUser(int userId) {
+        List<Split> list = new ArrayList<>();
+        String sql = "SELECT s.*, u1.username as payer_name, u2.username as payee_name " +
+                     "FROM Splits s " +
+                     "JOIN Users u1 ON s.payer_id = u1.user_id " +
+                     "JOIN Users u2 ON s.payee_id = u2.user_id " +
+                     "WHERE s.payer_id = ? OR s.payee_id = ? " +
+                     "ORDER BY s.date DESC, s.split_id DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(new Split(
+                        rs.getInt("split_id"),
+                        rs.getInt("payer_id"),
+                        rs.getString("payer_name"),
+                        rs.getInt("payee_id"),
+                        rs.getString("payee_name"),
+                        rs.getDouble("amount"),
+                        rs.getString("description"),
+                        rs.getString("date"),
+                        rs.getString("status")
+                ));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    /** Updates the status of a split (e.g., mark as PAID). */
+    public boolean updateSplitStatus(int splitId, String status) {
+        String sql = "UPDATE Splits SET status = ? WHERE split_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, splitId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /** Checks if the user has any pending splits where they are the payee. */
+    public int getPendingSplitCount(int userId) {
+        String sql = "SELECT COUNT(*) FROM Splits WHERE payee_id = ? AND status = 'PENDING'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) { e.printStackTrace(); }
         return 0;
     }

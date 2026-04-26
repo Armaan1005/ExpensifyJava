@@ -88,6 +88,43 @@ public class DashboardPanel extends JPanel {
         content.add(banner);
         content.add(UIUtils.vSpace(24));
 
+        // ── Split Notifications ───────────────────────────────
+        int pendingSplits = db.getPendingSplitCount(user.getUserId());
+        if (pendingSplits > 0) {
+            UIUtils.RoundedPanel splitBanner = new UIUtils.RoundedPanel(12, new Color(64, 138, 113, 30));
+            splitBanner.setLayout(new BorderLayout(16, 0));
+            splitBanner.setBorder(new EmptyBorder(12, 16, 12, 16));
+            splitBanner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
+            splitBanner.setAlignmentX(LEFT_ALIGNMENT);
+
+            JPanel splitLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            splitLeft.setOpaque(false);
+            JLabel splitIcon = new JLabel(UIUtils.getIcon("user", 24, UIUtils.ACCENT));
+            JLabel splitText = UIUtils.createLabel("  You have " + pendingSplits + " pending split request" 
+                    + (pendingSplits > 1 ? "s" : "") + " to review.",
+                    UIUtils.FONT_BOLD, UIUtils.TEXT_PRIMARY);
+            splitLeft.add(splitIcon);
+            splitLeft.add(splitText);
+
+            JButton viewSplits = UIUtils.createGhostButton("View All");
+            viewSplits.setPreferredSize(new Dimension(100, 30));
+            viewSplits.addActionListener(e -> {
+                // We don't have direct access to MainFrame.switchTo, 
+                // but we can find the MainFrame from the component hierarchy
+                Window w = SwingUtilities.getWindowAncestor(this);
+                if (w instanceof MainFrame) {
+                    // Navigate to Splits tab (index might vary, but we can call a method)
+                    // For now, let's assume parent is MainFrame
+                }
+            });
+
+            splitBanner.add(splitLeft, BorderLayout.WEST);
+            // splitBanner.add(viewSplits, BorderLayout.EAST);
+
+            content.add(splitBanner);
+            content.add(UIUtils.vSpace(24));
+        }
+
         // ── Stat Cards Row ────────────────────────────────────
         double totalAll    = db.getTotalExpenses(user.getUserId());
         double totalMonth  = db.getMonthlyExpenses(user.getUserId());
@@ -431,18 +468,20 @@ public class DashboardPanel extends JPanel {
 
         JLabel header = UIUtils.createLabel("Recent Transactions",
                 UIUtils.FONT_HEADER, UIUtils.TEXT_PRIMARY);
-        header.setAlignmentX(LEFT_ALIGNMENT);
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(header);
         panel.add(UIUtils.vSpace(16));
 
         if (recent.isEmpty()) {
             JLabel empty = UIUtils.createLabel("No transactions yet — add your first expense!",
                     UIUtils.FONT_SUBTITLE, UIUtils.TEXT_MUTED);
-            empty.setAlignmentX(LEFT_ALIGNMENT);
+            empty.setAlignmentX(Component.LEFT_ALIGNMENT);
             panel.add(empty);
         } else {
             for (Expense exp : recent) {
-                panel.add(createTransactionRow(exp));
+                JPanel row = createTransactionRow(exp);
+                row.setAlignmentX(Component.LEFT_ALIGNMENT);
+                panel.add(row);
                 panel.add(UIUtils.vSpace(4));
             }
         }

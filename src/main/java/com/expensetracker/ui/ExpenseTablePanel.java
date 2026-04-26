@@ -109,7 +109,7 @@ public class ExpenseTablePanel extends JPanel {
         filterEndDate.setPreferredSize(new Dimension(140, 36));
         filterCard.add(filterEndDate);
 
-        JButton applyBtn = UIUtils.createSecondaryButton("Apply");
+        JButton applyBtn = UIUtils.createPrimaryButton("Apply");
         applyBtn.setPreferredSize(new Dimension(90, 36));
         applyBtn.addActionListener(e -> filterData());
         filterCard.add(applyBtn);
@@ -185,7 +185,7 @@ public class ExpenseTablePanel extends JPanel {
         table.setFont(UIUtils.FONT_REGULAR);
         table.setForeground(UIUtils.TEXT_PRIMARY);
         table.setBackground(UIUtils.BG_SURFACE);
-        table.setSelectionBackground(new Color(124, 58, 237, 60));
+        table.setSelectionBackground(new Color(64, 138, 113, 60));
         table.setSelectionForeground(UIUtils.TEXT_PRIMARY);
         table.setGridColor(UIUtils.BORDER_COLOR);
         table.setRowHeight(42);
@@ -209,7 +209,7 @@ public class ExpenseTablePanel extends JPanel {
                 setBorder(new EmptyBorder(4, 12, 4, 12));
 
                 if (isSelected) {
-                    setBackground(new Color(124, 58, 237, 60));
+                    setBackground(new Color(64, 138, 113, 60));
                     setForeground(UIUtils.TEXT_PRIMARY);
                 } else {
                     setBackground(row % 2 == 0 ? UIUtils.BG_SURFACE : UIUtils.BG_CARD);

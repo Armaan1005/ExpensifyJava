@@ -24,6 +24,7 @@ public class MainFrame extends JFrame {
     private ExpenseFormPanel expenseFormPanel;
     private ExpenseTablePanel expenseTablePanel;
     private BudgetPanel budgetPanel;
+    private SplitPanel splitPanel;
 
     // Navigation
     private CardLayout cardLayout;
@@ -33,6 +34,7 @@ public class MainFrame extends JFrame {
     private static final String ADD_EXPENSE = "add_expense";
     private static final String VIEW_EXPENSES = "view_expenses";
     private static final String BUDGET = "budget";
+    private static final String SPLITS = "splits";
 
     public MainFrame(User user) {
         this.user = user;
@@ -65,11 +67,13 @@ public class MainFrame extends JFrame {
         expenseFormPanel = new ExpenseFormPanel(user, this);
         expenseTablePanel = new ExpenseTablePanel(user, this);
         budgetPanel = new BudgetPanel(user, this);
+        splitPanel = new SplitPanel(user, this);
 
         contentArea.add(dashboardPanel, DASHBOARD);
         contentArea.add(expenseFormPanel, ADD_EXPENSE);
         contentArea.add(expenseTablePanel, VIEW_EXPENSES);
         contentArea.add(budgetPanel, BUDGET);
+        contentArea.add(splitPanel, SPLITS);
 
         root.add(contentArea, BorderLayout.CENTER);
         setContentPane(root);
@@ -152,6 +156,15 @@ public class MainFrame extends JFrame {
         });
         navButtons.add(budgetBtn);
         sidebar.add(budgetBtn);
+        sidebar.add(UIUtils.vSpace(4));
+
+        JButton splitBtn = UIUtils.createNavButton("user", "Split Expenses", false);
+        splitBtn.addActionListener(e -> {
+            splitPanel.refresh();
+            switchTo(SPLITS, splitBtn);
+        });
+        navButtons.add(splitBtn);
+        sidebar.add(splitBtn);
 
         // ── Spacer ────────────────────────────────────────────
         sidebar.add(Box.createVerticalGlue());
@@ -261,6 +274,7 @@ public class MainFrame extends JFrame {
         dashboardPanel.refresh();
         expenseTablePanel.refresh();
         budgetPanel.refresh();
+        splitPanel.refresh();
     }
 
     /** Navigates to the expense form in edit mode. */
